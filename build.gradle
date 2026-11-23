@@ -1,51 +1,59 @@
-apply plugin: 'java-library'
-apply plugin: 'net.serenity-bdd.aggregator'
+plugins {
+    id 'java'
+    id 'net.serenity-bdd.serenity-gradle-plugin' version '4.2.1'
+    id 'org.sonarqube' version '5.1.0.4882'
+}
 
+group = 'co.sqasa'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
 repositories {
-    mavenLocal()
     mavenCentral()
-    jcenter()
 }
 
-buildscript {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        jcenter()
-    }
-    dependencies {
-
-        classpath("net.serenity-bdd:serenity-gradle-plugin:2.0.80")
-    }
+ext {
+    serenityVersion = '4.2.1'
+    cucumberVersion = '7.20.1'
+    junitPlatformVersion = '1.11.3'
+    junitJupiterVersion = '5.11.3'
 }
-
 
 dependencies {
+    implementation "net.serenity-bdd:serenity-core:${serenityVersion}"
+    implementation "net.serenity-bdd:serenity-screenplay:${serenityVersion}"
+    implementation "net.serenity-bdd:serenity-screenplay-webdriver:${serenityVersion}"
+    implementation 'org.hamcrest:hamcrest:2.2'
+    implementation 'org.slf4j:slf4j-simple:2.0.16'
 
-    implementation 'net.serenity-bdd:serenity-junit:2.0.80'
-    implementation 'net.serenity-bdd:serenity-cucumber:1.9.45'
-    implementation 'net.serenity-bdd:serenity-core:2.0.80'
-    implementation 'org.slf4j:slf4j-simple:1.7.7'
-    implementation 'com.google.guava:guava:23.0'
-    implementation group: 'org.apache.poi', name: 'poi', version: '3.17'
-    implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '3.17'
-
-
-
-
+    testImplementation "net.serenity-bdd:serenity-cucumber:${serenityVersion}"
+    testImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
+    testImplementation "org.junit.platform:junit-platform-suite:${junitPlatformVersion}"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}"
+    // SerenityReporterParallel (serenity-cucumber 4.x) usa org.junit.runners.ParentRunner al evaluar tags de Ejemplos
+    testImplementation 'junit:junit:4.13.2'
 }
 
-
-test {
-
-    ignoreFailures = true
-}
-
-
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
+test {
+    useJUnitPlatform()
+    systemProperties System.getProperties()
+    testLogging.showStandardStreams = true
+    finalizedBy 'aggregate'
+}
 
-gradle.startParameter.continueOnFailure = true
+sonar {
+    properties {
+        property 'sonar.projectKey', 'reto-tecnico-sqa-datepicker'
+        property 'sonar.projectName', 'Reto Tecnico SQA - Datepicker'
+        property 'sonar.host.url', System.getenv('SONAR_HOST_URL') ?: 'http://localhost:9000'
+        property 'sonar.sourceEncoding', 'UTF-8'
+    }
+}
